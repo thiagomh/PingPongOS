@@ -32,8 +32,23 @@ int task_get_ret(task_t *task){
     }
 }
 
-// ****************************************************************************
+int task_getprio(task_t *task){
+    if(task == NULL){
+        return taskExec->prio;
+    }else{
+        return task->prio;
+    }
+}
 
+void task_setprio(task_t *task, int prio){
+    if(task == NULL){
+        taskExec->prio = prio;
+    }else{
+        task->prio = prio;
+    }
+}
+
+// ****************************************************************************
 
 
 void before_ppos_init () {
@@ -425,7 +440,7 @@ int after_mqueue_msgs (mqueue_t *queue) {
 
 task_t * scheduler() {
     // FCFS scheduler
-    task_t* aux = NULL; // Comparacao de tarefas
+    /*task_t* aux = NULL; // Comparacao de tarefas
     task_t* choose_task = NULL; // Tarefa a receber o processador
 
     // Caso haja uma tarefa em execução o escalonador deve
@@ -436,19 +451,11 @@ task_t * scheduler() {
     }else{
         choose_task = readyQueue;
         aux = readyQueue->next;
-    }
+    }*/
 
-    for(int i=0; i < countTasks; i++){
-        if(task_get_ret(choose_task) > task_get_eet(aux))
-            choose_task = aux;
-
-        aux = aux->next;
-    }
-
-    return choose_task;
     
-    /*if ( readyQueue != NULL ) {
+    if ( readyQueue != NULL ) {
         return readyQueue;
     }
-    return NULL;*/
+    return NULL;
 }

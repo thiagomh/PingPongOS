@@ -27,6 +27,7 @@ typedef struct task_t
    // ... (outros campos deve ser adicionados APOS esse comentario)
    int eet, // estimated execution time
        ret, // remaining execution time
+       prio, // prioridade da task
        running_time; // ???
 
 
