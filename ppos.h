@@ -128,7 +128,6 @@ int after_task_join (task_t *task) ;
 void task_set_eet (task_t *task, int et);
 int task_get_eet(task_t *task);
 int task_get_ret(task_t *task);
-void decreased_ret(task_t* task);
 
 // operações de IPC ============================================================
 

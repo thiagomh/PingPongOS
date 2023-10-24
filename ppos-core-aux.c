@@ -48,6 +48,7 @@ void task_setprio(task_t *task, int prio){
     }
 }
 
+
 // ****************************************************************************
 
 
@@ -439,23 +440,28 @@ int after_mqueue_msgs (mqueue_t *queue) {
 }
 
 task_t * scheduler() {
-    // FCFS scheduler
-    /*task_t* aux = NULL; // Comparacao de tarefas
+    // SRTF scheduler
+    task_t* aux = NULL; // Comparacao de tarefas
     task_t* choose_task = NULL; // Tarefa a receber o processador
 
-    // Caso haja uma tarefa em execução o escalonador deve
-    // comparar o ret com o eet da lista de tarefas prontas.
-    if(taskExec != NULL){
-        aux = readyQueue;
-        choose_task = taskExec;
-    }else{
+    if( readyQueue != NULL){
+        
         choose_task = readyQueue;
         aux = readyQueue->next;
-    }*/
+
+        while(aux->next != NULL){
+            if(aux->ret < choose_task->ret)
+                choose_task = aux;
+
+            aux = aux->next;
+        }
+    }
+
+    return choose_task;
 
     
-    if ( readyQueue != NULL ) {
+    /*if ( readyQueue != NULL ) {
         return readyQueue;
     }
-    return NULL;
+    return NULL;*/
 }
