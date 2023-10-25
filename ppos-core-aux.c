@@ -61,7 +61,14 @@ struct itimerval timer ;
 // tratador do sinal
 void interrupt_handler(int signum){
     systemTime++;
+    if(taskExec == taskDisp)
+        return;
+    
     taskExec->quantum--;
+    taskExec->running_time++;
+    if(taskExec->quantum == 0){
+        task_yield();
+    }
 }
 
 
@@ -81,7 +88,26 @@ void after_ppos_init () {
 #ifdef DEBUG
     printf("\ninit - AFTER");
 #endif
+    action.handler = interrupt_handler();
+    sigemptyset(&action.sa_mask);
+    action.sa_flags = 0;
+    if(sigaction (SIGALRM, &action, 0) < 0 ){
+        perror("Erro em sigaction: ");
+        exit(1);
+    }
 
+    // ajusta valores do temporizador
+    timer.it_value.tv_usec = 1000 ;      // primeiro disparo, em micro-segundos
+    timer.it_value.tv_sec  = 0 ;      // primeiro disparo, em segundos
+    timer.it_interval.tv_usec = 1000 ;   // disparos subsequentes, em micro-segundos
+    timer.it_interval.tv_sec  = 0 ;   // disparos subsequentes, em segundos
+
+    // arma o temporizador ITIMER_REAL (vide man setitimer)
+    if (setitimer (ITIMER_REAL, &timer, 0) < 0)
+    {
+        perror ("Erro em setitimer: ") ;
+        exit (1) ;
+    }
 }
 
 void before_task_create (task_t *task ) {
