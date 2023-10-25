@@ -4,7 +4,11 @@
 // ****************************************************************************
 // Coloque aqui as suas modificações, p.ex. includes, defines variáveis, 
 // estruturas e funções
+#include <signal.h>
+#include <sys/time.h>
 
+#define QUANTUM 20
+#define DEBUG
 
 void task_set_eet(task_t *task, int et){
     if(task == NULL){
@@ -48,6 +52,18 @@ void task_setprio(task_t *task, int prio){
     }
 }
 
+// estrutura que define um tratador de sinal (deve ser global ou static)
+struct sigaction action ;
+
+// estrutura de inicialização to timer
+struct itimerval timer ;
+
+// tratador do sinal
+void interrupt_handler(int signum){
+    systemTime++;
+    taskExec->quantum--;
+}
+
 
 // ****************************************************************************
 
@@ -65,6 +81,7 @@ void after_ppos_init () {
 #ifdef DEBUG
     printf("\ninit - AFTER");
 #endif
+
 }
 
 void before_task_create (task_t *task ) {
@@ -80,6 +97,7 @@ void after_task_create (task_t *task ) {
     printf("\ntask_create - AFTER - [%d]", task->id);
 #endif
     task_set_eet(task, 99999);
+    task->quantum = QUANTUM; 
 }
 
 void before_task_exit () {
@@ -441,7 +459,7 @@ int after_mqueue_msgs (mqueue_t *queue) {
 
 task_t * scheduler() {
     // SRTF scheduler
-    task_t* aux = NULL; // Comparacao de tarefas
+    /*task_t* aux = NULL; // Comparacao de tarefas
     task_t* choose_task = NULL; // Tarefa a receber o processador
 
     if( readyQueue != NULL){
@@ -457,11 +475,11 @@ task_t * scheduler() {
         }
     }
 
-    return choose_task;
+    return choose_task;*/
 
     
-    /*if ( readyQueue != NULL ) {
+    if ( readyQueue != NULL ) {
         return readyQueue;
     }
-    return NULL;*/
+    return NULL;
 }
