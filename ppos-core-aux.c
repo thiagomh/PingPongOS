@@ -8,7 +8,14 @@
 #include <sys/time.h>
 
 #define QUANTUM 20
-#define DEBUG
+//#define DEBUG
+
+/*
+// estrutura que define um tratador de sinal (deve ser global ou static)
+struct sigaction action;
+
+// estrutura de inicialização to timer 
+struct itimerval timer; */
 
 void task_set_eet(task_t *task, int et){
     if(task == NULL){
@@ -51,29 +58,27 @@ void task_setprio(task_t *task, int prio){
         task->prio = prio;
     }
 }
-
-// estrutura que define um tratador de sinal (deve ser global ou static)
-struct sigaction action ;
-
-// estrutura de inicialização to timer
-struct itimerval timer ;
-
+/*
 // tratador do sinal
-void interrupt_handler(int signum){
+void tratador(int signum){
     systemTime++;
     if(taskExec == taskDisp)
         return;
     
+    taskExec->ret--;
     taskExec->quantum--;
     taskExec->running_time++;
-    if(taskExec->quantum == 0){
+    #ifdef DEBUG
+        printf("\ntratador - [%d] - [%d] - [%d] - [%d]", taskExec->id, taskExec->ret, taskExec->quantum, taskExec->running_time);
+    #endif
+    if(taskExec->running_time < QUANTUM){
         task_yield();
     }
 }
+*/
 
 
 // ****************************************************************************
-
 
 void before_ppos_init () {
     // put your customization here
@@ -88,10 +93,13 @@ void after_ppos_init () {
 #ifdef DEBUG
     printf("\ninit - AFTER");
 #endif
-    action.handler = interrupt_handler();
+    // Durante a inicialização do sistema, um temporizador deve ser programado
+    // para disparar a cada 1 milissegundo.
+    systemTime = 0;
+    /*action.sa_handler = tratador;
     sigemptyset(&action.sa_mask);
     action.sa_flags = 0;
-    if(sigaction (SIGALRM, &action, 0) < 0 ){
+    if(sigaction(SIGALRM, &action, 0) < 0){
         perror("Erro em sigaction: ");
         exit(1);
     }
@@ -99,7 +107,7 @@ void after_ppos_init () {
     // ajusta valores do temporizador
     timer.it_value.tv_usec = 1000 ;      // primeiro disparo, em micro-segundos
     timer.it_value.tv_sec  = 0 ;      // primeiro disparo, em segundos
-    timer.it_interval.tv_usec = 1000 ;   // disparos subsequentes, em micro-segundos
+    timer.it_interval.tv_usec = 1000;   // disparos subsequentes, em micro-segundos
     timer.it_interval.tv_sec  = 0 ;   // disparos subsequentes, em segundos
 
     // arma o temporizador ITIMER_REAL (vide man setitimer)
@@ -107,7 +115,7 @@ void after_ppos_init () {
     {
         perror ("Erro em setitimer: ") ;
         exit (1) ;
-    }
+    }*/
 }
 
 void before_task_create (task_t *task ) {
@@ -123,7 +131,7 @@ void after_task_create (task_t *task ) {
     printf("\ntask_create - AFTER - [%d]", task->id);
 #endif
     task_set_eet(task, 99999);
-    task->quantum = QUANTUM; 
+    //task->quantum = QUANTUM; 
 }
 
 void before_task_exit () {
@@ -159,6 +167,7 @@ void before_task_yield () {
 #ifdef DEBUG
     printf("\ntask_yield - BEFORE - [%d]", taskExec->id);
 #endif
+    //taskExec->quantum = 0;
 }
 void after_task_yield () {
     // put your customization here
@@ -485,27 +494,30 @@ int after_mqueue_msgs (mqueue_t *queue) {
 
 task_t * scheduler() {
     // SRTF scheduler
-    /*task_t* aux = NULL; // Comparacao de tarefas
-    task_t* choose_task = NULL; // Tarefa a receber o processador
+    task_t* aux = NULL; // Comparacao de tarefas
+    task_t* choose_task = readyQueue; // Tarefa a receber o processador
+    int size = queue_size((queue_t*)readyQueue);
+    if(readyQueue != NULL){
+        if(size == 1){
+            aux = readyQueue;
+        }else{
+            aux = readyQueue->next;
+        }
 
-    if( readyQueue != NULL){
-        
-        choose_task = readyQueue;
-        aux = readyQueue->next;
-
-        while(aux->next != NULL){
-            if(aux->ret < choose_task->ret)
+        while(size > 0 && aux != NULL){
+            if(choose_task->ret > aux->ret && aux != taskDisp)
                 choose_task = aux;
 
             aux = aux->next;
+            size--;
         }
+        printf("eet: %d    ret: %d", choose_task->eet, choose_task->ret);
+        return choose_task;
     }
-
-    return choose_task;*/
 
     
-    if ( readyQueue != NULL ) {
+    /*if ( readyQueue != NULL ) {
         return readyQueue;
     }
-    return NULL;
+    return NULL;*/
 }
