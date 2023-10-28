@@ -10,12 +10,11 @@
 #define QUANTUM 20
 //#define DEBUG
 
-/*
 // estrutura que define um tratador de sinal (deve ser global ou static)
 struct sigaction action;
 
 // estrutura de inicialização to timer 
-struct itimerval timer; */
+struct itimerval timer; 
 
 void task_set_eet(task_t *task, int et){
     if(task == NULL){
@@ -58,11 +57,14 @@ void task_setprio(task_t *task, int prio){
         task->prio = prio;
     }
 }
-/*
-// tratador do sinal
+
+// Os disparos do temporizador devem ser tratados por
+// uma rotina de tratamento de ticks.
+
 void tratador(int signum){
-    systemTime++;
-    if(taskExec == taskDisp)
+    systemTime++;  // Incrementando tempo do sistema
+
+    if(taskExec == taskDisp) // Se a tarefa corrente não é de usuário o quantum não é decrementado
         return;
     
     taskExec->ret--;
@@ -71,11 +73,11 @@ void tratador(int signum){
     #ifdef DEBUG
         printf("\ntratador - [%d] - [%d] - [%d] - [%d]", taskExec->id, taskExec->ret, taskExec->quantum, taskExec->running_time);
     #endif
-    if(taskExec->running_time < QUANTUM){
+    if(taskExec->quantum == 0){
         task_yield();
     }
 }
-*/
+
 
 
 // ****************************************************************************
@@ -93,10 +95,9 @@ void after_ppos_init () {
 #ifdef DEBUG
     printf("\ninit - AFTER");
 #endif
-    // Durante a inicialização do sistema, um temporizador deve ser programado
-    // para disparar a cada 1 milissegundo.
     systemTime = 0;
-    /*action.sa_handler = tratador;
+    
+    action.sa_handler = tratador;
     sigemptyset(&action.sa_mask);
     action.sa_flags = 0;
     if(sigaction(SIGALRM, &action, 0) < 0){
@@ -104,7 +105,9 @@ void after_ppos_init () {
         exit(1);
     }
 
-    // ajusta valores do temporizador
+    // ajusta valores do temporizador - Durante a inicialização do sistema, 
+    // um temporizador deve ser programado
+    // para disparar a cada 1 milissegundo.
     timer.it_value.tv_usec = 1000 ;      // primeiro disparo, em micro-segundos
     timer.it_value.tv_sec  = 0 ;      // primeiro disparo, em segundos
     timer.it_interval.tv_usec = 1000;   // disparos subsequentes, em micro-segundos
@@ -115,7 +118,7 @@ void after_ppos_init () {
     {
         perror ("Erro em setitimer: ") ;
         exit (1) ;
-    }*/
+    }
 }
 
 void before_task_create (task_t *task ) {
@@ -174,6 +177,8 @@ void after_task_yield () {
 #ifdef DEBUG
     printf("\ntask_yield - AFTER - [%d]", taskExec->id);
 #endif
+    taskExec->quantum = QUANTUM; 
+    taskExec->running_time = 0;
 }
 
 
@@ -511,7 +516,7 @@ task_t * scheduler() {
             aux = aux->next;
             size--;
         }
-        printf("eet: %d    ret: %d", choose_task->eet, choose_task->ret);
+    
         return choose_task;
     }
 
