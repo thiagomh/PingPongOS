@@ -542,7 +542,7 @@ task_t * scheduler() {
         return choose_task;
     }*/
 
-    aux = readyQueue->next;
+    aux = choose_task->next;
 
     while(aux != readyQueue){
         if(choose_task->ret > aux->ret && aux->id != 0)
