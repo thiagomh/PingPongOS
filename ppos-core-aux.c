@@ -71,15 +71,17 @@ void tratador(int signum){
     if(taskExec == taskDisp) // Se a tarefa corrente não é de usuário o quantum não é decrementado
         return;
     
-    taskExec->ret--;
+    //taskExec->ret--;
+    task_set_eet(taskExec, task_get_ret(taskExec)-1);
     taskExec->quantum--;
     taskExec->running_time++;
     taskExec->processor_time++;
     #ifdef DEBUG
         printf("\ntratador - [%d] - [%d] - [%d] - [%d]", taskExec->id, taskExec->ret, taskExec->quantum, taskExec->running_time);
     #endif
-    if(taskExec->quantum == 0){
+    if(taskExec->quantum <= 0){
         task_yield();
+        printf("yield");
     }
 }
 
@@ -98,7 +100,7 @@ void after_ppos_init () {
 #ifdef DEBUG
     printf("\ninit - AFTER");
 #endif
-    systemTime = 0;
+    //systemTime = 0;
     
     action.sa_handler = tratador;
     sigemptyset(&action.sa_mask);
@@ -140,7 +142,6 @@ void after_task_create (task_t *task ) {
     task->quantum = QUANTUM; 
     task->activations = 0;
     task->running_time = 0;
-    task->processor_time = 0;
     task->exe_time_start = systime();
 }
 
@@ -151,7 +152,7 @@ void before_task_exit () {
 #endif
     printf("Task [%d] exit: execution  time: %d ms, processor time %d ms, %d activations", 
          taskExec->id, systime() - taskExec->exe_time_start, 
-         taskExec->processor_time, taskExec->activations);
+         taskExec->running_time, taskExec->activations);
 }
 
 void after_task_exit () {
@@ -183,11 +184,13 @@ void before_task_yield () {
 #endif
     taskExec->activations++;
 }
+
 void after_task_yield () {
     // put your customization here
 #ifdef DEBUG
     printf("\ntask_yield - AFTER - [%d]", taskExec->id);
 #endif
+    taskExec->quantum = QUANTUM;
 }
 
 
@@ -218,6 +221,7 @@ void after_task_resume(task_t *task) {
 #ifdef DEBUG
     printf("\ntask_resume - AFTER - [%d]", task->id);
 #endif
+    taskExec->quantum = QUANTUM;
 }
 
 void before_task_sleep () {
@@ -527,10 +531,12 @@ task_t * scheduler() {
             aux = aux->next;
             size--;
         }
-        choose_task->quantum = QUANTUM; 
+        //choose_task->quantum = QUANTUM; 
+        #ifdef DEBUG
+            printf("\nc_task - id[%d] - ret[%d]", taskExec->id, taskExec->ret);
+        #endif
         return choose_task;
     }
-    return readyQueue;
 
     
     /*if ( readyQueue != NULL ) {
