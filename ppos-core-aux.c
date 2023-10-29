@@ -139,6 +139,7 @@ void after_task_create (task_t *task ) {
     task_set_eet(task, 99999);
     task->quantum = QUANTUM; 
     task->activations = 0;
+    task->running_time = 0;
     task->processor_time = 0;
     task->exe_time_start = systime();
 }
@@ -511,7 +512,7 @@ task_t * scheduler() {
     // SRTF scheduler
     task_t* aux = NULL; // Comparacao de tarefas
     task_t* choose_task = readyQueue; // Tarefa a receber o processador
-    int size = queue_size((queue_t*)readyQueue);
+    int size = countTasks;//queue_size((queue_t*)readyQueue);
     if(readyQueue != NULL){
         if(size == 1){
             aux = readyQueue;
@@ -520,16 +521,16 @@ task_t * scheduler() {
         }
 
         while(size > 0 && aux != NULL){
-            if(choose_task->ret > aux->ret && aux != taskDisp)
+            if(task_get_ret(choose_task) > task_get_ret(aux))
                 choose_task = aux;
 
             aux = aux->next;
             size--;
         }
-        choose_task->running_time = 0;
         choose_task->quantum = QUANTUM; 
         return choose_task;
     }
+    return readyQueue;
 
     
     /*if ( readyQueue != NULL ) {
