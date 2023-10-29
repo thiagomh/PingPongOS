@@ -75,7 +75,6 @@ void tratador(int signum){
     task_set_eet(taskExec, task_get_ret(taskExec)-1);
     taskExec->quantum--;
     taskExec->running_time++;
-    taskExec->processor_time++;
     #ifdef DEBUG
         printf("\ntratador - [%d] - [%d] - [%d] - [%d]", taskExec->id, taskExec->ret, taskExec->quantum, taskExec->running_time);
     #endif
@@ -139,6 +138,7 @@ void after_task_create (task_t *task ) {
     printf("\ntask_create - AFTER - [%d]", task->id);
 #endif
     task_set_eet(task, 99999);
+    task->flag = 1;
     task->quantum = QUANTUM; 
     task->activations = 0;
     task->running_time = 0;
@@ -515,8 +515,12 @@ int after_mqueue_msgs (mqueue_t *queue) {
 task_t * scheduler() {
     // SRTF scheduler
     task_t* aux = NULL; // Comparacao de tarefas
-    task_t* choose_task = readyQueue; // Tarefa a receber o processador
-    int size = countTasks;//queue_size((queue_t*)readyQueue);
+    task_t* choose_task ;
+    if(readyQueue->id != 0)
+        choose_task = readyQueue; // Tarefa a receber o processador
+    else
+        choose_task = readyQueue->next;
+    /*int size = countTasks;//queue_size((queue_t*)readyQueue);
     if(readyQueue != NULL){
         if(size == 1){
             aux = readyQueue;
@@ -536,8 +540,18 @@ task_t * scheduler() {
             printf("\nc_task - id[%d] - ret[%d]", taskExec->id, taskExec->ret);
         #endif
         return choose_task;
+    }*/
+
+    aux = readyQueue->next;
+
+    while(aux != readyQueue){
+        if(choose_task->ret > aux->ret && aux->id != 0)
+            choose_task = aux;
+
+        aux = aux->next;
     }
 
+    return choose_task;
     
     /*if ( readyQueue != NULL ) {
         return readyQueue;

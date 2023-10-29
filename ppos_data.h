@@ -29,13 +29,10 @@ typedef struct task_t
        ret, // remaining execution time
        prio, // prioridade da task
        running_time, // tempo corrente de execução da tarefa
-       quantum;
-
-   unsigned int activations, 
-                processor_time,
-                exe_time_start; 
-
-
+       quantum,
+       flag, 
+       activations, 
+       exe_time_start; 
 
 
 } task_t ;
