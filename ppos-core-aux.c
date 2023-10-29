@@ -58,6 +58,22 @@ void task_setprio(task_t *task, int prio){
     }
 }
 
+void task_setquantum(task_t* task, int q){
+    if(task == NULL){
+        taskExec->quantum--;
+    }else{
+        task->quantum--;
+    }
+}
+
+int task_getquantum(task_t* task){
+    if(task == NULL){
+        return taskExec->quantum;
+    }else{
+        return task->quantum;
+    }
+}
+
 /*unsigned int systime(){
     return systemTime;
 }*/
@@ -68,20 +84,19 @@ void task_setprio(task_t *task, int prio){
 void tratador(int signum){
     systemTime++;  // Incrementando tempo do sistema
 
-    if(taskExec == taskDisp) // Se a tarefa corrente não é de usuário o quantum não é decrementado
-        return;
-    
-    //taskExec->ret--;
-    task_set_eet(taskExec, task_get_ret(taskExec)-1);
-    taskExec->quantum--;
-    taskExec->running_time++;
-    #ifdef DEBUG
-        printf("\ntratador - [%d] - [%d] - [%d] - [%d]", taskExec->id, taskExec->ret, taskExec->quantum, taskExec->running_time);
-    #endif
-    if(taskExec->quantum <= 0){
-        task_yield();
-        printf("yield");
+    if(taskExec->id != 0 && taskExec != taskDisp){
+        //taskExec->quantum--;
+
+        task_setquantum(taskExec, taskExec->quantum - 1);
+        taskExec->running_time++;
+        taskExec->ret--;
+
+        if(taskExec->quantum == 0){
+            task_yield();
+        }
     }
+
+
 }
 
 // ****************************************************************************
@@ -150,7 +165,7 @@ void before_task_exit () {
 #ifdef DEBUG
     printf("\ntask_exit - BEFORE - [%d]", taskExec->id);
 #endif
-    printf("Task [%d] exit: execution  time: %d ms, processor time %d ms, %d activations", 
+    printf("Task [%d] exit: execution  time: %d ms, processor time %d ms, %d activations\n", 
          taskExec->id, systime() - taskExec->exe_time_start, 
          taskExec->running_time, taskExec->activations);
 }
@@ -167,7 +182,6 @@ void before_task_switch ( task_t *task ) {
 #ifdef DEBUG
     printf("\ntask_switch - BEFORE - [%d -> %d]", taskExec->id, task->id);
 #endif
-    taskExec->activations++;
 }
 
 void after_task_switch ( task_t *task ) {
@@ -182,7 +196,6 @@ void before_task_yield () {
 #ifdef DEBUG
     printf("\ntask_yield - BEFORE - [%d]", taskExec->id);
 #endif
-    taskExec->activations++;
 }
 
 void after_task_yield () {
@@ -190,7 +203,7 @@ void after_task_yield () {
 #ifdef DEBUG
     printf("\ntask_yield - AFTER - [%d]", taskExec->id);
 #endif
-    taskExec->quantum = QUANTUM;
+    //taskExec->quantum = QUANTUM;
 }
 
 
@@ -199,7 +212,6 @@ void before_task_suspend( task_t *task ) {
 #ifdef DEBUG
     printf("\ntask_suspend - BEFORE - [%d]", task->id);
 #endif
-    taskExec->activations++;
 }
 
 void after_task_suspend( task_t *task ) {
@@ -214,6 +226,7 @@ void before_task_resume(task_t *task) {
 #ifdef DEBUG
     printf("\ntask_resume - BEFORE - [%d]", task->id);
 #endif
+    //task->quantum = QUANTUM; 
 }
 
 void after_task_resume(task_t *task) {
@@ -221,7 +234,7 @@ void after_task_resume(task_t *task) {
 #ifdef DEBUG
     printf("\ntask_resume - AFTER - [%d]", task->id);
 #endif
-    taskExec->quantum = QUANTUM;
+    //taskExec->quantum = QUANTUM;
 }
 
 void before_task_sleep () {
@@ -229,7 +242,6 @@ void before_task_sleep () {
 #ifdef DEBUG
     printf("\ntask_sleep - BEFORE - [%d]", taskExec->id);
 #endif
-    taskExec->activations++;
 }
 
 void after_task_sleep () {
@@ -515,32 +527,11 @@ int after_mqueue_msgs (mqueue_t *queue) {
 task_t * scheduler() {
     // SRTF scheduler
     task_t* aux = NULL; // Comparacao de tarefas
-    task_t* choose_task ;
-    if(readyQueue->id != 0)
-        choose_task = readyQueue; // Tarefa a receber o processador
+    task_t* choose_task = NULL; // Tarefa a receber o processador
+    if(readyQueue->id != 0 && readyQueue != taskDisp)
+        choose_task = readyQueue; 
     else
         choose_task = readyQueue->next;
-    /*int size = countTasks;//queue_size((queue_t*)readyQueue);
-    if(readyQueue != NULL){
-        if(size == 1){
-            aux = readyQueue;
-        }else{
-            aux = readyQueue->next;
-        }
-
-        while(size > 0 && aux != NULL){
-            if(task_get_ret(choose_task) > task_get_ret(aux))
-                choose_task = aux;
-
-            aux = aux->next;
-            size--;
-        }
-        //choose_task->quantum = QUANTUM; 
-        #ifdef DEBUG
-            printf("\nc_task - id[%d] - ret[%d]", taskExec->id, taskExec->ret);
-        #endif
-        return choose_task;
-    }*/
 
     aux = choose_task->next;
 
@@ -550,11 +541,7 @@ task_t * scheduler() {
 
         aux = aux->next;
     }
-
+    choose_task->quantum = QUANTUM;
     return choose_task;
     
-    /*if ( readyQueue != NULL ) {
-        return readyQueue;
-    }
-    return NULL;*/
 }
