@@ -58,6 +58,10 @@ void task_setprio(task_t *task, int prio){
     }
 }
 
+/*unsigned int systime(){
+    return systemTime;
+}*/
+
 // Os disparos do temporizador devem ser tratados por
 // uma rotina de tratamento de ticks.
 
@@ -70,6 +74,7 @@ void tratador(int signum){
     taskExec->ret--;
     taskExec->quantum--;
     taskExec->running_time++;
+    taskExec->processor_time++;
     #ifdef DEBUG
         printf("\ntratador - [%d] - [%d] - [%d] - [%d]", taskExec->id, taskExec->ret, taskExec->quantum, taskExec->running_time);
     #endif
@@ -77,8 +82,6 @@ void tratador(int signum){
         task_yield();
     }
 }
-
-
 
 // ****************************************************************************
 
@@ -134,7 +137,10 @@ void after_task_create (task_t *task ) {
     printf("\ntask_create - AFTER - [%d]", task->id);
 #endif
     task_set_eet(task, 99999);
-    //task->quantum = QUANTUM; 
+    task->quantum = QUANTUM; 
+    task->activations = 0;
+    task->processor_time = 0;
+    task->exe_time_start = systime();
 }
 
 void before_task_exit () {
@@ -142,6 +148,9 @@ void before_task_exit () {
 #ifdef DEBUG
     printf("\ntask_exit - BEFORE - [%d]", taskExec->id);
 #endif
+    printf("Task [%d] exit: execution  time: %d ms, processor time %d ms, %d activations", 
+         taskExec->id, systime() - taskExec->exe_time_start, 
+         taskExec->processor_time, taskExec->activations);
 }
 
 void after_task_exit () {
@@ -156,6 +165,7 @@ void before_task_switch ( task_t *task ) {
 #ifdef DEBUG
     printf("\ntask_switch - BEFORE - [%d -> %d]", taskExec->id, task->id);
 #endif
+    taskExec->activations++;
 }
 
 void after_task_switch ( task_t *task ) {
@@ -170,15 +180,13 @@ void before_task_yield () {
 #ifdef DEBUG
     printf("\ntask_yield - BEFORE - [%d]", taskExec->id);
 #endif
-    //taskExec->quantum = 0;
+    taskExec->activations++;
 }
 void after_task_yield () {
     // put your customization here
 #ifdef DEBUG
     printf("\ntask_yield - AFTER - [%d]", taskExec->id);
 #endif
-    taskExec->quantum = QUANTUM; 
-    taskExec->running_time = 0;
 }
 
 
@@ -187,6 +195,7 @@ void before_task_suspend( task_t *task ) {
 #ifdef DEBUG
     printf("\ntask_suspend - BEFORE - [%d]", task->id);
 #endif
+    taskExec->activations++;
 }
 
 void after_task_suspend( task_t *task ) {
@@ -215,6 +224,7 @@ void before_task_sleep () {
 #ifdef DEBUG
     printf("\ntask_sleep - BEFORE - [%d]", taskExec->id);
 #endif
+    taskExec->activations++;
 }
 
 void after_task_sleep () {
@@ -516,7 +526,8 @@ task_t * scheduler() {
             aux = aux->next;
             size--;
         }
-    
+        choose_task->running_time = 0;
+        choose_task->quantum = QUANTUM; 
         return choose_task;
     }
 

@@ -28,8 +28,12 @@ typedef struct task_t
    int eet, // estimated execution time
        ret, // remaining execution time
        prio, // prioridade da task
-       running_time, 
-       quantum; 
+       running_time, // tempo corrente de execução da tarefa
+       quantum;
+
+   unsigned int activations, 
+                processor_time,
+                exe_time_start; 
 
 
 
