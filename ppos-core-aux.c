@@ -84,16 +84,17 @@ int task_getquantum(task_t* task){
 void tratador(int signum){
     systemTime++;  // Incrementando tempo do sistema
 
-    if(taskExec->id != 0 && taskExec != taskDisp){
+    if(taskExec->flag == 1){
         //taskExec->quantum--;
-
+    
         task_setquantum(taskExec, taskExec->quantum - 1);
         taskExec->running_time++;
         taskExec->ret--;
-
         if(taskExec->quantum == 0){
             task_yield();
         }
+
+
     }
 
 
@@ -114,8 +115,6 @@ void after_ppos_init () {
 #ifdef DEBUG
     printf("\ninit - AFTER");
 #endif
-    //systemTime = 0;
-    
     action.sa_handler = tratador;
     sigemptyset(&action.sa_mask);
     action.sa_flags = 0;
@@ -154,7 +153,7 @@ void after_task_create (task_t *task ) {
 #endif
     task_set_eet(task, 99999);
     task->flag = 1;
-    task->quantum = QUANTUM; 
+    //task->quantum = QUANTUM; 
     task->activations = 0;
     task->running_time = 0;
     task->exe_time_start = systime();
@@ -527,11 +526,7 @@ int after_mqueue_msgs (mqueue_t *queue) {
 task_t * scheduler() {
     // SRTF scheduler
     task_t* aux = NULL; // Comparacao de tarefas
-    task_t* choose_task = NULL; // Tarefa a receber o processador
-    if(readyQueue->id != 0 && readyQueue != taskDisp)
-        choose_task = readyQueue; 
-    else
-        choose_task = readyQueue->next;
+    task_t* choose_task = readyQueue; // Tarefa a receber o processador
 
     aux = choose_task->next;
 
